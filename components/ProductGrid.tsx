@@ -324,7 +324,7 @@ export default function ProductGrid() {
   <p style={{ fontSize: "0.7rem", letterSpacing: "4px", color: "#999", textTransform: "uppercase", marginBottom: "12px", textAlign: "center" }}>
     Collection
   </p>
-  <h2 style={{
+ <h2 style={{
     fontFamily: "'Playfair Display', serif",
     fontSize: "clamp(2.2rem, 6vw, 4.5rem)",
     fontWeight: 600,
@@ -336,8 +336,12 @@ export default function ProductGrid() {
   }}>
     The New Arrivals
   </h2>
+  <p style={{ color: "#999", fontSize: "0.9rem", letterSpacing: "0.5px", textAlign: "center" }}>
+   The finest threads for the fiercest athletes.
+  </p>
 </div>
-        </div>
+</div>
+        
 
         {loading ? (
           <div style={{ textAlign: "center", padding: "4rem", color: "#999", fontSize: "0.85rem" }}>
