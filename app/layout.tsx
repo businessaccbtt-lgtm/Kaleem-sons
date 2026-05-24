@@ -112,7 +112,7 @@ export const metadata: Metadata = {
   },
    // ✅ Google Search Console Verification
   verification: {
-    google: "Iz43p1ig0lh3sNyJX_TdwYbivD3zHAQpJx8HiBDs4E4",
+    google: "6Vt8DACp0oJziqL9RMCRghsnrctA6kQAk86V7wpFsFc",
   },
 };
 
