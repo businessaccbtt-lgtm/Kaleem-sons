@@ -47,14 +47,14 @@ export const metadata: Metadata = {
   ],
 
   // ✅ Base URL for all OG images
-  metadataBase: new URL("https://kaleem-sons-puce.vercel.app"),
+  metadataBase: new URL("https://kaleemsons.com"),
 
   // ✅ Open Graph (Facebook, WhatsApp, LinkedIn previews)
   openGraph: {
     title: "Kaleem Sons | Premium Sportswear & Martial Arts Apparel",
     description:
       "Premium sportswear, hoodies, tracksuits, karate & BJJ apparel. Worldwide shipping. Bulk orders welcome. Quality from Pakistan to the world.",
-    url: "https://kaleem-sons-puce.vercel.app",
+    url: "https://kaleemsons.com",
     siteName: "Kaleem Sons",
     images: [
       {
@@ -91,7 +91,7 @@ export const metadata: Metadata = {
 
   // ✅ Canonical URL
   alternates: {
-    canonical: "https://kaleem-sons-puce.vercel.app",
+    canonical: "https://kaleemsons.com",
   },
 
   // ✅ App info
@@ -100,7 +100,7 @@ export const metadata: Metadata = {
 
   // ✅ Authors
  // ✅ Authors
-  authors: [{ name: "Kaleem Sons", url: "https://kaleem-sons-puce.vercel.app" }],
+  authors: [{ name: "Kaleem Sons", url: "https://kaleemsons.com" }],
   creator: "Kaleem Sons",
   publisher: "Kaleem Sons",
 
@@ -128,12 +128,12 @@ export default function RootLayout({
       // Organization
       {
         "@type": "Organization",
-        "@id": "https://kaleem-sons-puce.vercel.app/#organization",
+        "@id": "https://kaleemsons.com/#organization",
         name: "Kaleem Sons",
-        url: "https://kaleem-sons-puce.vercel.app",
+        url: "https://kaleemsons.com",
         logo: {
           "@type": "ImageObject",
-          url: "https://kaleem-sons-puce.vercel.app/logo.png",
+          url: "https://kaleemsons.com/logo.png",
         },
         description:
           "Premium sportswear, martial arts apparel, hoodies, tracksuits and BJJ gi manufacturer. Worldwide shipping and bulk orders welcome.",
@@ -161,18 +161,18 @@ export default function RootLayout({
       // Website
       {
         "@type": "WebSite",
-        "@id": "https://kaleem-sons-puce.vercel.app/#website",
-        url: "https://kaleem-sons-puce.vercel.app",
+        "@id": "https://kaleemsons.com/#website",
+        url: "https://kaleemsons.com",
         name: "Kaleem Sons",
         publisher: {
-          "@id": "https://kaleem-sons-puce.vercel.app/#organization",
+          "@id": "https://kaleemsons.com/#organization",
         },
         potentialAction: {
           "@type": "SearchAction",
           target: {
             "@type": "EntryPoint",
             urlTemplate:
-              "https://kaleem-sons-puce.vercel.app/shop?q={search_term_string}",
+              "https://kaleemsons.com/shop?q={search_term_string}",
           },
           "query-input": "required name=search_term_string",
         },
@@ -180,10 +180,10 @@ export default function RootLayout({
       // Store
       {
         "@type": "Store",
-        "@id": "https://kaleem-sons-puce.vercel.app/#store",
+        "@id": "https://kaleemsons.com/#store",
         name: "Kaleem Sons",
-        url: "https://kaleem-sons-puce.vercel.app",
-        image: "https://kaleem-sons-puce.vercel.app/og-image.jpg",
+        url: "https://kaleemsons.com",
+        image: "https://kaleemsons.com/og-image.jpg",
         description:
           "Premium sportswear and martial arts apparel. Bulk and wholesale orders welcome. Worldwide shipping.",
         priceRange: "PKR 3,500 - PKR 15,000",
