@@ -1,5 +1,5 @@
 "use client"
-
+import { revalidateProducts } from "@/lib/actions"
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -19,10 +19,9 @@ export default function EditProduct() {
     sizes: [] as string[], colors: [] as string[],
   })
 
-  useEffect(() => {
-    if (localStorage.getItem("admin_auth") !== "true") { router.push("/admin"); return }
-    fetchProduct()
-  }, [])
+ useEffect(() => {
+  fetchProduct()
+}, [])
 
   async function fetchProduct() {
     const { data } = await supabase.from("products").select("*").eq("id", id).single()
@@ -107,6 +106,7 @@ export default function EditProduct() {
       colors: form.colors,
     }).eq("id", id)
     if (error) { alert("Error: " + error.message); setSaving(false); return }
+      await revalidateProducts() // ✅ clears cache
     router.push("/admin/products")
   }
 

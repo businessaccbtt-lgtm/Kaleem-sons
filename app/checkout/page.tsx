@@ -1,4 +1,5 @@
 "use client"
+import { placeOrder } from "@/lib/orderActions"
 import { useState, useEffect } from "react"
 import { useCart } from "@/context/CartContext"
 import { useSession } from "next-auth/react"
@@ -67,32 +68,28 @@ export default function CheckoutPage() {
   }
 
   async function handlePlaceOrder(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
+  e.preventDefault()
+  setLoading(true)
 
-    const res = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items,
-        total: totalPrice,
-        paymentMethod: selectedPayment,
-        form,
-      }),
-    })
+  const result = await placeOrder({
+    items,
+    total: totalPrice,
+    paymentMethod: selectedPayment,
+    form,
+  })
 
-    const data = await res.json()
-
-    if (!res.ok) {
-      alert(data.error || "Something went wrong.")
-      setLoading(false)
-      return
-    }
-
-    clearCart()
-    setPlaced(true)
+  if (result.error) {
+    alert(result.error)
     setLoading(false)
+    return
   }
+
+  clearCart()
+  setPlaced(true)
+  setLoading(false)
+}
+
+    
 
   if (placed) {
     const isManualTransfer = ["jazzcash_manual", "easypaisa_manual"].includes(selectedPayment)

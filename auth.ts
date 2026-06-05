@@ -46,18 +46,43 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        await supabaseAdmin
+        // ✅ upsert AND select the Supabase UUID in one call
+        const { data } = await supabaseAdmin
           .from("users")
           .upsert(
             { name: user.name, email: user.email, image: user.image },
             { onConflict: "email" }
           )
+          .select("id")
+          .single()
+
+        if (data) {
+          user.id = data.id // ✅ Supabase UUID, not Google's ID
+        }
       }
+
+      if (account?.provider === "credentials") {
+        const { data } = await supabaseAdmin
+          .from("users")
+          .select("id")
+          .eq("email", user.email!)
+          .single()
+
+        if (data) {
+          user.id = data.id
+        }
+      }
+
       return true
     },
-    async jwt({ token, user }) {
-      if (user) token.id = user.id
 
+    async jwt({ token, user }) {
+      // user is only present on first sign-in
+      if (user?.id) {
+        token.id = user.id
+      }
+
+      // Fallback: look up by email if id still missing
       if (!token.id && token.email) {
         const { data } = await supabaseAdmin
           .from("users")
@@ -69,6 +94,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
       return token
     },
+
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string
@@ -82,7 +108,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             email: session.user.email,
             role: "authenticated",
           }
-          ;(session as any).supabaseAccessToken = jwt.sign(payload, signingSecret)
+          session.accessToken = jwt.sign(payload, signingSecret)
         }
       }
       return session

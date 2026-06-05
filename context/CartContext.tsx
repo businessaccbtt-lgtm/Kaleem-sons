@@ -1,7 +1,8 @@
 "use client"
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect,  useCallback, ReactNode } from "react"
 import { useSession } from "next-auth/react"
-import { supabase } from "@/lib/supabase"
+
+import { supabase } from "@/lib/supabaseClient"
 
 export type CartItem = {
   id: string
@@ -33,117 +34,201 @@ const CartContext = createContext<CartContextType | null>(null)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession()
+
+ 
+
   const [items, setItems] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [pendingItem, setPendingItem] = useState<CartItem | null>(null)
 
+  const loadCart = useCallback(async (userId: string) => {
+    if (!session?.accessToken) return
+
+    try {
+      const { data, error } = await supabase
+        .from("cart_items")
+        .select("*")
+        .eq("user_id", userId)
+
+      if (error) {
+        console.error("❌ loadCart error:", error.message)
+        return
+      }
+
+      if (data) {
+        setItems(data.map(item => ({
+          id: item.product_id,
+          name: item.name,
+          price: item.price,
+          image: item.image,
+          size: item.size,
+          color: item.color ?? "",
+          quantity: item.quantity,
+        })))
+      }
+    } catch (err: any) {
+      console.error("💥 loadCart exception:", err.message)
+    }
+  }, [supabase, session?.accessToken])
+
   useEffect(() => {
-    if (session?.user?.id) {
+    if (session?.user?.id && session?.accessToken) {
       loadCart(session.user.id)
     } else {
       setItems([])
     }
-  }, [session?.user?.id])
+  }, [session?.user?.id, session?.accessToken, loadCart])
 
-  async function loadCart(userId: string) {
-    const { data } = await supabase
-      .from("cart_items")
-      .select("*")
-      .eq("user_id", userId)
 
-    if (data) {
-      setItems(data.map(item => ({
-        id: item.product_id,
-        name: item.name,
-        price: item.price,
-        image: item.image,
-        size: item.size,
-        color: item.color ?? "",   // ← safe fallback for existing rows without color
-        quantity: item.quantity,
-      })))
+
+
+
+ 
+  const addItem = useCallback(async (item: CartItem) => {
+    if (!session?.user?.id) {
+      setPendingItem(item)
+      setIsAuthModalOpen(true)
+      return
     }
-  }
 
-  async function addItem(item: CartItem) {
-    setItems(prev => {
-      const existing = prev.find(i => i.id === item.id && i.size === item.size)
+
+
+
+    setItems(current => {
+      const existing = current.find(i => i.id === item.id && i.size === item.size)
       if (existing) {
-        return prev.map(i =>
+        return current.map(i =>
           i.id === item.id && i.size === item.size
-            ? { ...i, quantity: i.quantity + item.quantity }
+            ? { ...i, quantity: i.quantity + 1 }
             : i
         )
       }
-      return [...prev, item]
+      return [...current, { ...item, quantity: 1 }]
     })
 
     setIsCartOpen(true)
 
-    if (session?.user?.id) {
-      await supabase.from("cart_items").upsert({
-        user_id: session.user.id,
-        product_id: item.id,
-        name: item.name,
-        price: item.price,
-        image: item.image,
-        size: item.size,
-        color: item.color,        // ← was missing, now included
-        quantity: item.quantity,
-      }, { onConflict: "user_id,product_id,size" })
+    const existing = items.find(i => i.id === item.id && i.size === item.size)
+
+    try {
+      if (existing) {
+        const { error } = await supabase
+          .from("cart_items")
+          .update({ quantity: existing.quantity + 1 })
+          .eq("user_id", session.user.id)
+          .eq("product_id", item.id)
+          .eq("size", item.size)
+
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from("cart_items")
+          .insert({
+            user_id: session.user.id,
+            product_id: item.id,
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            size: item.size,
+            color: item.color || null,
+            quantity: 1,
+          })
+
+       
+        if (error) throw error
+      }
+    } catch (err: any) {
+      console.error("❌ addItem failed:", err.message)
+      loadCart(session.user.id)
     }
-  }
+  }, [session?.user?.id, items, supabase, loadCart])
 
-  async function removeItem(id: string, size: string) {
-    setItems(prev => prev.filter(i => !(i.id === id && i.size === size)))
+  const removeItem = useCallback(async (id: string, size: string) => {
+    if (!session?.user?.id) return
 
-    if (session?.user?.id) {
-      await supabase
+    setItems(current => current.filter(i => !(i.id === id && i.size === size)))
+
+    try {
+      const { error } = await supabase
         .from("cart_items")
         .delete()
         .eq("user_id", session.user.id)
         .eq("product_id", id)
         .eq("size", size)
+
+      if (error) throw error
+    } catch (err: any) {
+      console.error("❌ removeItem failed:", err.message)
+      loadCart(session.user.id)
     }
-  }
+  }, [session?.user?.id, supabase, loadCart])
 
-  async function updateQuantity(id: string, size: string, quantity: number) {
-    if (quantity < 1) return removeItem(id, size)
+  const updateQuantity = useCallback(async (id: string, size: string, quantity: number) => {
+    if (!session?.user?.id) return
 
-    setItems(prev =>
-      prev.map(i => i.id === id && i.size === size ? { ...i, quantity } : i)
+    if (quantity <= 0) {
+      removeItem(id, size)
+      return
+    }
+
+    setItems(current =>
+      current.map(i =>
+        i.id === id && i.size === size ? { ...i, quantity } : i
+      )
     )
 
-    if (session?.user?.id) {
-      await supabase
+    try {
+      const { error } = await supabase
         .from("cart_items")
         .update({ quantity })
         .eq("user_id", session.user.id)
         .eq("product_id", id)
         .eq("size", size)
-    }
-  }
 
-  async function clearCart() {
+      if (error) throw error
+    } catch (err: any) {
+      console.error("❌ updateQuantity failed:", err.message)
+      loadCart(session.user.id)
+    }
+  }, [session?.user?.id, supabase, loadCart, removeItem])
+
+  const clearCart = useCallback(async () => {
+    if (!session?.user?.id) return
+
     setItems([])
-    if (session?.user?.id) {
-      await supabase
+
+    try {
+      const { error } = await supabase
         .from("cart_items")
         .delete()
         .eq("user_id", session.user.id)
+
+      if (error) throw error
+    } catch (err: any) {
+      console.error("❌ clearCart failed:", err.message)
+      loadCart(session.user.id)
     }
-  }
+  }, [session?.user?.id, supabase, loadCart])
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
   return (
     <CartContext.Provider value={{
-      items, addItem, removeItem, updateQuantity, clearCart,
-      totalItems, totalPrice,
-      isCartOpen, setIsCartOpen,
-      isAuthModalOpen, setIsAuthModalOpen,
-      pendingItem, setPendingItem,
+      items,
+      addItem,
+      removeItem,
+      updateQuantity,
+      clearCart,
+      totalItems,
+      totalPrice,
+      isCartOpen,
+      setIsCartOpen,
+      isAuthModalOpen,
+      setIsAuthModalOpen,
+      pendingItem,
+      setPendingItem,
     }}>
       {children}
     </CartContext.Provider>
@@ -151,7 +236,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 }
 
 export function useCart() {
-  const ctx = useContext(CartContext)
-  if (!ctx) throw new Error("useCart must be used inside CartProvider")
-  return ctx
+  const context = useContext(CartContext)
+  if (!context) throw new Error("useCart must be used within CartProvider")
+  return context
 }

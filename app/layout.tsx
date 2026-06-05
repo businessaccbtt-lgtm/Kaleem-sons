@@ -1,3 +1,7 @@
+
+
+
+
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -111,6 +115,7 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
    // ✅ Google Search Console Verification
+
   verification: {
     google: "6Vt8DACp0oJziqL9RMCRghsnrctA6kQAk86V7wpFsFc",
   },

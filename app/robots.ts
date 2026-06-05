@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/", "/admin/"],
     },
-    sitemap: "https://kaleemasons.com/sitemap.xml",
+    sitemap: "https://kaleemsons.com/sitemap.xml",
   }
 }

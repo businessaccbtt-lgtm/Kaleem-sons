@@ -1,5 +1,5 @@
 "use client"
-
+import { revalidateProducts } from "@/lib/actions"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -18,9 +18,7 @@ export default function AddProduct() {
     colors: ["#111111"],
   })
 
-  useEffect(() => {
-    if (localStorage.getItem("admin_auth") !== "true") router.push("/admin")
-  }, [])
+ 
 
  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
   const file = e.target.files?.[0]
@@ -94,6 +92,7 @@ export default function AddProduct() {
       colors: form.colors,
     })
     if (error) { alert("Error: " + error.message); setSaving(false); return }
+    await revalidateProducts()
     router.push("/admin/products")
   }
 

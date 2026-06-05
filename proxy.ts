@@ -1,14 +1,26 @@
 // proxy.ts
 import { auth } from "@/auth"
+import { NextResponse } from "next/server"
 
 export default auth((req) => {
+  const { pathname } = req.nextUrl
+
+  // Admin route protection via cookie
+  const isAdminRoute = pathname.startsWith("/admin") && pathname !== "/admin"
+  if (isAdminRoute) {
+    const adminAuth = req.cookies.get("admin_auth")?.value
+    if (adminAuth !== "true") {
+      return NextResponse.redirect(new URL("/admin", req.nextUrl))
+    }
+  }
+
+  // User route protection via NextAuth session
   const isLoggedIn = !!req.auth
   const isProtected =
-    req.nextUrl.pathname.startsWith("/account") ||
-    req.nextUrl.pathname.startsWith("/checkout")
-
+    pathname.startsWith("/account") ||
+    pathname.startsWith("/checkout")
   if (isProtected && !isLoggedIn) {
-    return Response.redirect(new URL("/signin", req.nextUrl))
+    return NextResponse.redirect(new URL("/signin", req.nextUrl))
   }
 })
 

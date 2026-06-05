@@ -19,12 +19,8 @@ export default function AdminProducts() {
   const router = useRouter()
 
   useEffect(() => {
-    if (localStorage.getItem("admin_auth") !== "true") {
-      router.push("/admin")
-      return
-    }
-    fetchProducts()
-  }, [])
+  fetchProducts()
+}, [])
 
   async function fetchProducts() {
     const { data } = await supabase
@@ -39,14 +35,16 @@ export default function AdminProducts() {
     if (!confirm("Delete this product?")) return
     setDeleting(id)
     await supabase.from("products").delete().eq("id", id)
+     await revalidateProducts() // ✅ clears cache
+
     setProducts(prev => prev.filter(p => p.id !== id))
     setDeleting(null)
   }
 
-  function handleLogout() {
-    localStorage.removeItem("admin_auth")
-    router.push("/admin")
-  }
+ async function handleLogout() {
+  await fetch("/api/admin-logout", { method: "POST" })
+  router.push("/admin")
+}
 
   return (
    <div style={{ minHeight: "100vh", background: "#f9f9f9", padding: "2rem", paddingTop: "6rem" }}>
