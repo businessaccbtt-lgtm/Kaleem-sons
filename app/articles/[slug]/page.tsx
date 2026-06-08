@@ -4,17 +4,19 @@ import Link from "next/link"
 
 export const revalidate = 60
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const { data } = await supabase.from("articles").select("title, excerpt").eq("slug", params.slug).single()
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const { data } = await supabase.from("articles").select("title, excerpt").eq("slug", slug).single()
   if (!data) return {}
   return { title: data.title, description: data.excerpt || "" }
 }
 
-export default async function ArticlePage({ params }: { params: { slug: string } }) {
+export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   const { data: article } = await supabase
     .from("articles")
     .select("*")
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .single()
 
   if (!article) notFound()
