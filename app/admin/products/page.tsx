@@ -57,20 +57,26 @@ export default function AdminProducts() {
             </h1>
             <p style={{ color: "#999", fontSize: "0.85rem", margin: 0 }}>{products.length} total products</p>
           </div>
-          <div style={{ display: "flex", gap: "0.75rem" }}>
-            <button
-              onClick={() => router.push("/admin/products/add")}
-              style={{ padding: "0.7rem 1.4rem", background: "#111", color: "#fff", border: "none", borderRadius: "10px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", letterSpacing: "1px" }}
-            >
-              + Add Product
-            </button>
-            <button
-              onClick={handleLogout}
-              style={{ padding: "0.7rem 1.4rem", background: "#fff", color: "#111", border: "1.5px solid #e5e5e5", borderRadius: "10px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}
-            >
-              Logout
-            </button>
-          </div>
+         <div style={{ display: "flex", gap: "0.75rem" }}>
+  <button
+    onClick={() => router.push("/admin/articles")}
+    style={{ padding: "0.7rem 1.4rem", background: "#fff", color: "#111", border: "1.5px solid #e5e5e5", borderRadius: "10px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}
+  >
+    Articles
+  </button>
+  <button
+    onClick={() => router.push("/admin/products/add")}
+    style={{ padding: "0.7rem 1.4rem", background: "#111", color: "#fff", border: "none", borderRadius: "10px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", letterSpacing: "1px" }}
+  >
+    + Add Product
+  </button>
+  <button
+    onClick={handleLogout}
+    style={{ padding: "0.7rem 1.4rem", background: "#fff", color: "#111", border: "1.5px solid #e5e5e5", borderRadius: "10px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}
+  >
+    Logout
+  </button>
+</div>
         </div>
 
         {loading ? (
