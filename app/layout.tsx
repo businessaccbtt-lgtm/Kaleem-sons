@@ -13,7 +13,7 @@ import TopBar from "@/components/TopBar";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-import MaterialSymbolsLink from "@/components/MaterialSymbolsLink";
+
 
 export const metadata: Metadata = {
   // ✅ Title with template for inner pages
@@ -223,11 +223,13 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-
-        {/* Material Symbols: not supported by next/font, so load it non-blocking via a Client Component */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <MaterialSymbolsLink />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+/>
+       
       </head>
 
       <body className="font-inter bg-white text-[#1F1F1F]">
