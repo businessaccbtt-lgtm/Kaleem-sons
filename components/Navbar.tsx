@@ -152,6 +152,7 @@ export default function Header() {
           ) : (
             <button
               onClick={() => setIsAuthModalOpen(true)}
+              aria-label="Sign in"
               style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: iconColor, transition: "color 0.4s ease" }}
             >
               <span className="material-symbols-outlined icon-size">account_circle</span>
@@ -160,6 +161,7 @@ export default function Header() {
 
           <button
             onClick={() => setIsCartOpen(true)}
+            aria-label="Open cart"
             style={{ position: "relative", display: "flex", alignItems: "center", background: "none", border: "none", cursor: "pointer", color: iconColor, transition: "color 0.4s ease" }}
           >
             <span className="material-symbols-outlined icon-size">shopping_bag</span>
@@ -235,6 +237,7 @@ export default function Header() {
           </Link>
           <button
             onClick={() => setMenuOpen(false)}
+            aria-label="Close menu"
             style={{ background: "none", border: "none", cursor: "pointer", color: "#999", padding: "4px", display: "flex" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: "1.4rem" }}>close</span>

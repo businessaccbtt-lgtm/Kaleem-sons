@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef, useLayoutEffect } from "react"
 import { createClient } from "@supabase/supabase-js"
 
 const supabase = createClient(
@@ -20,14 +20,14 @@ type Review = {
 }
 
 const STATIC_REVIEWS: Review[] = [
-  { name: "James R.",    location: "London, UK",           rating: 5,   text: "Absolutely love the quality! The fabric is premium and the stitching is perfect. Will definitely order again.",              product: "Classic Shalwar Kameez", avatar: "JR", isStatic: true },
-  { name: "Sofia M.",    location: "Toronto, Canada",      rating: 5,   text: "Fast delivery and the clothes look even better in person. The sizing guide was really helpful too!",                        product: "Ash Grey Oversized",     avatar: "SM", isStatic: true },
-  { name: "Luca B.",     location: "Milan, Italy",         rating: 5,   text: "Ordered for a special occasion and received it on time. The packaging was beautiful and the outfit was stunning.",          product: "Mocha Sherpa",           avatar: "LB", isStatic: true },
-  { name: "Emma T.",     location: "New York, USA",        rating: 5,   text: "Great quality for the price. Customer support was also very helpful when I had a question about sizing.",                   product: "Navy Split Logo",        avatar: "ET", isStatic: true },
-  { name: "Noah K.",     location: "Berlin, Germany",      rating: 5,   text: "Been buying from Kaleem Sons for 2 years now. Never disappointed. My go-to for formal wear.",                              product: "Black Forge",            avatar: "NK", isStatic: true },
-  { name: "Chloe D.",    location: "Paris, France",        rating: 4.8, text: "The fabric quality is unmatched at this price point. Highly recommend to anyone looking for premium clothing.",             product: "Ecru Pigment Dyed",      avatar: "CD", isStatic: true },
-  { name: "Aiden W.",    location: "Sydney, Australia",    rating: 5,   text: "The stitching detail is incredible. You can tell a lot of care goes into every piece.",                                    product: "Classic Shalwar Kameez", avatar: "AW", isStatic: true },
-  { name: "Isabelle V.", location: "Amsterdam, Netherlands", rating: 5, text: "Wore this to a formal dinner and got so many compliments. Absolutely worth every penny.",                                  product: "Mocha Sherpa",           avatar: "IV", isStatic: true },
+  { name: "James R.",    location: "London, UK",             rating: 5,   text: "Absolutely love the quality! The fabric is premium and the stitching is perfect. Will definitely order again.", product: "Classic Shalwar Kameez", avatar: "JR", isStatic: true },
+  { name: "Sofia M.",    location: "Toronto, Canada",        rating: 5,   text: "Fast delivery and the clothes look even better in person. The sizing guide was really helpful too!", product: "Ash Grey Oversized", avatar: "SM", isStatic: true },
+  { name: "Luca B.",     location: "Milan, Italy",           rating: 5,   text: "Ordered for a special occasion and received it on time. The packaging was beautiful and the outfit was stunning.", product: "Mocha Sherpa", avatar: "LB", isStatic: true },
+  { name: "Emma T.",     location: "New York, USA",          rating: 5,   text: "Great quality for the price. Customer support was also very helpful when I had a question about sizing.", product: "Navy Split Logo", avatar: "ET", isStatic: true },
+  { name: "Noah K.",     location: "Berlin, Germany",        rating: 5,   text: "Been buying from Kaleem Sons for 2 years now. Never disappointed. My go-to for formal wear.", product: "Black Forge", avatar: "NK", isStatic: true },
+  { name: "Chloe D.",    location: "Paris, France",          rating: 4.8, text: "The fabric quality is unmatched at this price point. Highly recommend to anyone looking for premium clothing.", product: "Ecru Pigment Dyed", avatar: "CD", isStatic: true },
+  { name: "Aiden W.",    location: "Sydney, Australia",      rating: 5,   text: "The stitching detail is incredible. You can tell a lot of care goes into every piece.", product: "Classic Shalwar Kameez", avatar: "AW", isStatic: true },
+  { name: "Isabelle V.", location: "Amsterdam, Netherlands", rating: 5,   text: "Wore this to a formal dinner and got so many compliments. Absolutely worth every penny.", product: "Mocha Sherpa", avatar: "IV", isStatic: true },
 ]
 
 const PRODUCTS = [
@@ -49,6 +49,9 @@ type FormState = {
 }
 
 const EMPTY_FORM: FormState = { name: "", location: "", rating: 0, text: "", product: "" }
+
+// px/second — same visual speed no matter how many cards or how wide the screen
+const MARQUEE_SPEED = 45
 
 function getInitials(name: string): string {
   return name.trim().split(" ").filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("")
@@ -109,44 +112,119 @@ function ReviewCard({ review }: { review: Review }) {
   )
 }
 
+function MarqueeSkeleton() {
+  return (
+    <>
+      <div className="mq-viewport">
+        <div className="mq-track" style={{ animation: "none" }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="mq-card mq-skeleton" />
+          ))}
+        </div>
+      </div>
+      <div className="mq-viewport">
+        <div className="mq-track" style={{ animation: "none" }}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="mq-card mq-skeleton" />
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
+/** Runs one infinite marquee row at a constant px/sec, regardless of content width or viewport size. */
+function MarqueeRow({ items, direction }: { items: Review[]; direction: "left" | "right" }) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [duration, setDuration] = useState<number | null>(null)
+
+  useLayoutEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+
+    const measure = () => {
+      // track is 4 identical copies back to back; -50% travels exactly 2 copies
+      const distance = el.scrollWidth / 2
+      setDuration(distance / MARQUEE_SPEED)
+    }
+
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [items])
+
+  return (
+    <div className="mq-viewport">
+      <div
+        ref={trackRef}
+        className={`mq-track ${direction}`}
+        aria-hidden="true"
+        style={{
+          animationDuration: duration ? `${duration}s` : undefined,
+          animationPlayState: duration ? "running" : "paused",
+        }}
+      >
+        {items.map((r, i) => (
+          <ReviewCard key={`${direction}-${i}`} review={r} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function ReviewsMarquee() {
   const [dbReviews, setDbReviews] = useState<Review[]>([])
+  const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
+  // Fetch DB reviews BEFORE the marquee mounts, so the track never resizes mid-animation
   useEffect(() => {
+    let cancelled = false
     async function fetchReviews() {
       const { data, error } = await supabase
         .from("reviews")
         .select("*")
         .order("created_at", { ascending: false })
-      if (!error && data) {
-        setDbReviews(
-          data.map((r) => ({
-            id: r.id,
-            name: r.name,
-            location: r.location,
-            rating: r.rating,
-            text: r.text,
-            product: r.product,
-            avatar: r.avatar,
-          }))
-        )
+      if (!cancelled) {
+        if (!error && data) {
+          setDbReviews(
+            data.map((r) => ({
+              id: r.id,
+              name: r.name,
+              location: r.location,
+              rating: r.rating,
+              text: r.text,
+              product: r.product,
+              avatar: r.avatar,
+            }))
+          )
+        }
+        setLoading(false)
       }
     }
     fetchReviews()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  const allReviews = [...STATIC_REVIEWS, ...dbReviews]
-  const mid = Math.ceil(allReviews.length / 2)
-  const baseRow1 = allReviews.slice(0, mid)
-  const baseRow2 = allReviews.slice(mid)
-  const row1 = [...baseRow1, ...baseRow1, ...baseRow1, ...baseRow1]
-  const row2 = [...baseRow2, ...baseRow2, ...baseRow2, ...baseRow2]
-  const avgRating = allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length
+  const allReviews = useMemo(() => [...STATIC_REVIEWS, ...dbReviews], [dbReviews])
+
+  const { row1, row2, avgRating } = useMemo(() => {
+    const mid = Math.ceil(allReviews.length / 2)
+    const baseRow1 = allReviews.slice(0, mid)
+    const baseRow2 = allReviews.slice(mid)
+    return {
+      row1: [...baseRow1, ...baseRow1, ...baseRow1, ...baseRow1],
+      row2: [...baseRow2, ...baseRow2, ...baseRow2, ...baseRow2],
+      avgRating: allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length,
+    }
+  }, [allReviews])
 
   function validate(): boolean {
     const e: Partial<Record<keyof FormState, string>> = {}
@@ -193,29 +271,30 @@ export default function ReviewsMarquee() {
   return (
     <>
       <style>{`
-        .mq-section { padding: 72px 0 64px; background: #fff; overflow: hidden; }
+        .mq-section { padding: clamp(40px, 8vw, 72px) 0 clamp(36px, 6vw, 64px); background: #fff; overflow: hidden; }
 
-        .mq-header { text-align: center; padding: 0 24px; margin-bottom: 44px; }
+        .mq-header { text-align: center; padding: 0 20px; margin-bottom: clamp(28px, 5vw, 44px); }
         .mq-eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--primary); margin-bottom: 8px; }
-        .mq-title { font-family: 'Playfair Display', serif; font-size: clamp(1.5rem, 3vw, 2.4rem); font-weight: 600; color: var(--dark); margin-bottom: 12px; line-height: 1.2; }
-        .mq-meta { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.82rem; color: var(--gray); margin-bottom: 20px; }
-        .mq-write-btn { display: inline-flex; align-items: center; gap: 7px; background: var(--primary, #8b5a2b); color: #fff; border: none; border-radius: 999px; padding: 11px 28px; font-size: 0.83rem; font-weight: 700; letter-spacing: 0.03em; cursor: pointer; transition: opacity 0.2s; }
+        .mq-title { font-family: 'Playfair Display', serif; font-size: clamp(1.35rem, 5vw, 2.4rem); font-weight: 600; color: var(--dark); margin-bottom: 12px; line-height: 1.2; }
+        .mq-meta { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.8rem; color: var(--gray); margin-bottom: 20px; flex-wrap: wrap; }
+        .mq-write-btn { display: inline-flex; align-items: center; gap: 7px; background: var(--primary, #8b5a2b); color: #fff; border: none; border-radius: 999px; padding: 11px 26px; font-size: 0.83rem; font-weight: 700; letter-spacing: 0.03em; cursor: pointer; transition: opacity 0.2s; }
         .mq-write-btn:hover { opacity: 0.88; }
 
         .mq-viewport { position: relative; margin-bottom: 14px; }
-        .mq-viewport::before, .mq-viewport::after { content: ''; position: absolute; top: 0; bottom: 0; width: 100px; z-index: 2; pointer-events: none; }
+        .mq-viewport::before, .mq-viewport::after { content: ''; position: absolute; top: 0; bottom: 0; width: clamp(32px, 8vw, 100px); z-index: 2; pointer-events: none; }
         .mq-viewport::before { left: 0; background: linear-gradient(to right, #fff, transparent); }
         .mq-viewport::after  { right: 0; background: linear-gradient(to left,  #fff, transparent); }
 
-        .mq-track { display: flex; gap: 16px; width: max-content; padding: 6px 0; }
-        .mq-track.left  { animation: mqLeft  18s linear infinite; }
-        .mq-track.right { animation: mqRight 22s linear infinite; }
-        .mq-section:hover .mq-track { animation-play-state: paused; }
+        .mq-track { display: flex; gap: clamp(10px, 2.5vw, 16px); width: max-content; padding: 6px 0; will-change: transform; backface-visibility: hidden; transform: translateZ(0); }
+        .mq-track.left  { animation-name: mqLeft;  animation-timing-function: linear; animation-iteration-count: infinite; }
+        .mq-track.right { animation-name: mqRight; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .mq-section:hover .mq-track.left,
+        .mq-section:hover .mq-track.right { animation-play-state: paused !important; }
         @keyframes mqLeft  { from { transform: translateX(0);    } to { transform: translateX(-50%); } }
         @keyframes mqRight { from { transform: translateX(-50%); } to { transform: translateX(0);    } }
         @media (prefers-reduced-motion: reduce) { .mq-track { animation: none !important; } }
 
-        .mq-card { background: var(--light, #f8f6f3); border: 1px solid rgba(0,0,0,0.07); border-radius: 14px; padding: 20px 22px; width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; transition: box-shadow 0.2s; }
+        .mq-card { background: var(--light, #f8f6f3); border: 1px solid rgba(0,0,0,0.07); border-radius: 14px; padding: 18px clamp(16px, 4vw, 22px); width: clamp(250px, 78vw, 340px); flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; transition: box-shadow 0.2s; }
         .mq-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
         .mq-card-text { font-size: 0.85rem; line-height: 1.65; color: #555; margin: 0; flex: 1; }
         .mq-card-product { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--primary); margin: 0; }
@@ -225,22 +304,25 @@ export default function ReviewsMarquee() {
         .mq-loc  { font-size: 0.68rem; color: var(--gray); margin: 0; }
         .mq-verified { margin-left: auto; }
 
+        .mq-skeleton { background: linear-gradient(90deg, #f1efec 25%, #f8f6f3 37%, #f1efec 63%); background-size: 400% 100%; animation: mqShimmer 1.4s ease infinite; min-height: 168px; }
+        @keyframes mqShimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
         .mq-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; backdrop-filter: blur(3px); }
-        .mq-modal { background: #fff; border-radius: 18px; padding: 32px 28px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.18); }
+        .mq-modal { background: #fff; border-radius: 18px; padding: 28px clamp(18px, 5vw, 28px); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.18); }
         .mq-modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; cursor: pointer; color: var(--gray, #888); padding: 4px; border-radius: 50%; transition: background 0.15s; line-height: 1; }
         .mq-modal-close:hover { background: #f3f3f3; }
-        .mq-modal-title { font-family: 'Playfair Display', serif; font-size: 1.45rem; font-weight: 600; color: var(--dark); margin: 0 0 4px; }
+        .mq-modal-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 600; color: var(--dark); margin: 0 0 4px; }
         .mq-modal-sub { font-size: 0.78rem; color: var(--gray, #888); margin: 0 0 24px; }
 
         .mq-form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
         .mq-form-label { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dark); }
-        .mq-input, .mq-textarea, .mq-select { border: 1.5px solid rgba(0,0,0,0.13); border-radius: 8px; padding: 9px 12px; font-size: 0.85rem; color: var(--dark); background: #fafafa; outline: none; transition: border-color 0.15s; font-family: inherit; width: 100%; box-sizing: border-box; }
+        .mq-input, .mq-textarea, .mq-select { border: 1.5px solid rgba(0,0,0,0.13); border-radius: 8px; padding: 9px 12px; font-size: 16px; color: var(--dark); background: #fafafa; outline: none; transition: border-color 0.15s; font-family: inherit; width: 100%; box-sizing: border-box; }
         .mq-input:focus, .mq-textarea:focus, .mq-select:focus { border-color: var(--primary, #8b5a2b); background: #fff; }
         .mq-input.err, .mq-textarea.err, .mq-select.err { border-color: #e05252; }
         .mq-textarea { resize: vertical; min-height: 90px; }
         .mq-form-err  { font-size: 0.7rem; color: #e05252; }
         .mq-char-hint { font-size: 0.68rem; text-align: right; }
-        .mq-rating-row { display: flex; align-items: center; gap: 10px; }
+        .mq-rating-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .mq-rating-hint { font-size: 0.75rem; color: var(--gray, #888); }
         .mq-submit-btn { width: 100%; background: var(--dark); color: #fff; border: none; border-radius: 999px; padding: 13px; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.04em; cursor: pointer; margin-top: 8px; transition: opacity 0.2s; }
         .mq-submit-btn:hover:not(:disabled) { opacity: 0.85; }
@@ -254,19 +336,18 @@ export default function ReviewsMarquee() {
         .mq-success-btn:hover { opacity: 0.85; }
 
         @media (max-width: 640px) {
-          .mq-card { width: 270px; padding: 16px 18px; }
           .mq-modal { padding: 24px 18px; }
+          .mq-write-btn { width: 100%; justify-content: center; }
         }
       `}</style>
 
       <section className="mq-section" aria-label="Customer reviews">
-
         <div className="mq-header">
-          <p className="mq-eyebrow">Customer Reviews</p>
+         
           <h2 className="mq-title">What Our Customers Say</h2>
           <div className="mq-meta">
-            <Stars count={Math.round(avgRating)} />
-            <span>{avgRating.toFixed(1)} out of 5 — based on {allReviews.length}+ reviews</span>
+            <Stars count={Math.round(avgRating || 5)} />
+            <span>{allReviews.length ? `${avgRating.toFixed(1)} out of 5 — based on ${allReviews.length}+ reviews` : ""}</span>
           </div>
           <button className="mq-write-btn" onClick={() => setModalOpen(true)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -277,18 +358,14 @@ export default function ReviewsMarquee() {
           </button>
         </div>
 
-        <div className="mq-viewport">
-          <div className="mq-track left" aria-hidden="true">
-            {row1.map((r, i) => <ReviewCard key={`r1-${i}`} review={r} />)}
-          </div>
-        </div>
-
-        <div className="mq-viewport">
-          <div className="mq-track right" aria-hidden="true">
-            {row2.map((r, i) => <ReviewCard key={`r2-${i}`} review={r} />)}
-          </div>
-        </div>
-
+        {loading ? (
+          <MarqueeSkeleton />
+        ) : (
+          <>
+            <MarqueeRow items={row1} direction="left" />
+            <MarqueeRow items={row2} direction="right" />
+          </>
+        )}
       </section>
 
       {modalOpen && (

@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@theme {
+  --font-playfair: var(--font-playfair);
+  --font-inter: var(--font-inter);
+  --font-prata: var(--font-prata);
+  --font-montserrat: var(--font-montserrat);
+  --font-bebas: var(--font-bebas);
+}
 :root {
   --primary: #c51e3a;
   --dark: #111111;

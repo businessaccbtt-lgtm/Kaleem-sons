@@ -1,9 +1,6 @@
-
-
-
-
 import type { Metadata } from "next";
 import "./globals.css";
+import { playfair, inter, prata, montserrat, bebasNeue } from "./fonts";
 
 import { Providers } from "./providers";
 import { CartProvider } from "@/context/CartContext";
@@ -15,6 +12,8 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import TopBar from "@/components/TopBar";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+
+import MaterialSymbolsLink from "@/components/MaterialSymbolsLink";
 
 export const metadata: Metadata = {
   // ✅ Title with template for inner pages
@@ -103,7 +102,6 @@ export const metadata: Metadata = {
   category: "Shopping",
 
   // ✅ Authors
- // ✅ Authors
   authors: [{ name: "Kaleem Sons", url: "https://kaleemsons.com" }],
   creator: "Kaleem Sons",
   publisher: "Kaleem Sons",
@@ -114,8 +112,8 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-   // ✅ Google Search Console Verification
 
+  // ✅ Google Search Console Verification
   verification: {
     google: "6Vt8DACp0oJziqL9RMCRghsnrctA6kQAk86V7wpFsFc",
   },
@@ -176,8 +174,7 @@ export default function RootLayout({
           "@type": "SearchAction",
           target: {
             "@type": "EntryPoint",
-            urlTemplate:
-              "https://kaleemsons.com/shop?q={search_term_string}",
+            urlTemplate: "https://kaleemsons.com/shop?q={search_term_string}",
           },
           "query-input": "required name=search_term_string",
         },
@@ -216,26 +213,21 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${playfair.variable} ${inter.variable} ${prata.variable} ${montserrat.variable} ${bebasNeue.variable}`}
+    >
       <head>
-        
         {/* ✅ JSON-LD Structured Data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
 
-        {/* ✅ Fonts */}
+        {/* Material Symbols: not supported by next/font, so load it non-blocking via a Client Component */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Prata&family=Montserrat:wght@800;900&family=Bebas+Neue&display=swap"
-          rel="stylesheet"
-        />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0,1"
-        />
+        <MaterialSymbolsLink />
       </head>
 
       <body className="font-inter bg-white text-[#1F1F1F]">
